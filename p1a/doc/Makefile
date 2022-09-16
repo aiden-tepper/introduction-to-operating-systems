@@ -151,13 +151,13 @@ MANS = $(man_MANS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} '/home/dormando/d/p/danga/git/memcached/missing' aclocal-1.16
+ACLOCAL = ${SHELL} '/home/aiden/OneDrive/OS/p1a/missing' aclocal-1.16
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
-AUTOCONF = ${SHELL} '/home/dormando/d/p/danga/git/memcached/missing' autoconf
-AUTOHEADER = ${SHELL} '/home/dormando/d/p/danga/git/memcached/missing' autoheader
-AUTOMAKE = ${SHELL} '/home/dormando/d/p/danga/git/memcached/missing' automake-1.16
-AWK = mawk
+AUTOCONF = ${SHELL} '/home/aiden/OneDrive/OS/p1a/missing' autoconf
+AUTOHEADER = ${SHELL} '/home/aiden/OneDrive/OS/p1a/missing' autoheader
+AUTOMAKE = ${SHELL} '/home/aiden/OneDrive/OS/p1a/missing' automake-1.16
+AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2 -pthread -pthread -Wall -Werror -pedantic -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls
@@ -187,7 +187,7 @@ LDFLAGS =
 LIBOBJS = 
 LIBS = -levent 
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} '/home/dormando/d/p/danga/git/memcached/missing' makeinfo
+MAKEINFO = ${SHELL} '/home/aiden/OneDrive/OS/p1a/missing' makeinfo
 MKDIR_P = /usr/bin/mkdir -p
 OBJEXT = o
 OPENSSL_CFLAGS = 
@@ -207,15 +207,15 @@ PROFILER = /usr/bin/gcov
 PROFILER_FLAGS = -fprofile-arcs -ftest-coverage
 PROFILER_LDFLAGS = -lgcov
 SET_MAKE = 
-SHELL = /bin/bash
+SHELL = /bin/sh
 STRIP = 
 VERSION = 1.6.17
-XML2RFC = /usr/bin/xml2rfc
+XML2RFC = no
 XSLTPROC = /usr/bin/xsltproc
-abs_builddir = /home/dormando/d/p/danga/git/memcached/doc
-abs_srcdir = /home/dormando/d/p/danga/git/memcached/doc
-abs_top_builddir = /home/dormando/d/p/danga/git/memcached
-abs_top_srcdir = /home/dormando/d/p/danga/git/memcached
+abs_builddir = /home/aiden/OneDrive/OS/p1a/doc
+abs_srcdir = /home/aiden/OneDrive/OS/p1a/doc
+abs_top_builddir = /home/aiden/OneDrive/OS/p1a
+abs_top_srcdir = /home/aiden/OneDrive/OS/p1a
 ac_ct_CC = gcc
 am__include = include
 am__leading_dot = .
@@ -242,7 +242,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/dormando/d/p/danga/git/memcached/install-sh
+install_sh = ${SHELL} /home/aiden/OneDrive/OS/p1a/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -521,7 +521,7 @@ uninstall-man: uninstall-man1
 #RFC2629_DTD = $(srcdir)/xml2rfc/rfc2629.dtd
 
 #%.txt: %.full $(RFC2629_DTD)
-#	/usr/bin/xml2rfc -d $(RFC2629_DTD) -c $(builddir) $< $@
+#	no -d $(RFC2629_DTD) -c $(builddir) $< $@
 #
 #%.full: %.xml $(RFC2629_XSL)
 #	/usr/bin/xsltproc --nonet $(RFC2629_XSL) $< > $@
