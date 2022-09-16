@@ -2111,31 +2111,10 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
     case DELTA_ITEM_CAS_MISMATCH:
         break; /* Should never get here */
     }
-    } else {
-    switch(mult_delta(c, key, nkey, incr, delta, temp, NULL)) {
-    case OK:
-        out_string(c, temp);
-        break;
-    case NON_NUMERIC:
-        out_string(c, "CLIENT_ERROR cannot increment or decrement non-numeric value");
-        break;
-    case EOM:
-        out_of_memory(c, "SERVER_ERROR out of memory");
-        break;
-    case DELTA_ITEM_NOT_FOUND:
-        pthread_mutex_lock(&c->thread->stats.mutex);
-        // if (incr) {
-        //     c->thread->stats.incr_misses++;
-        // } else {
-        //     c->thread->stats.decr_misses++;
-        // }
-        pthread_mutex_unlock(&c->thread->stats.mutex);
+    } else if (operation == 2) { // div
+        
+    } else { // mult
 
-        out_string(c, "NOT_FOUND");
-        break;
-    case DELTA_ITEM_CAS_MISMATCH:
-        break; /* Should never get here */
-    }
     }
 
 }
@@ -2871,7 +2850,7 @@ void process_command_ascii(conn *c, char *command) {
         if (strcmp(tokens[COMMAND_TOKEN].value, "mult") == 0) {
             
             WANT_TOKENS_OR(ntokens, 4, 5);
-            process_arithmetic_command(c, tokens, ntokens, 4);
+            process_arithmetic_command(c, tokens, ntokens, 3);
         } else {
             out_string(c, "ERROR");
         }
@@ -2887,7 +2866,7 @@ void process_command_ascii(conn *c, char *command) {
         } else if (strcmp(tokens[COMMAND_TOKEN].value, "div") == 0) {
 
             WANT_TOKENS_OR(ntokens, 4, 5);
-            process_arithmetic_command(c, tokens, ntokens, 3);
+            process_arithmetic_command(c, tokens, ntokens, 2);
 #ifdef MEMCACHED_DEBUG
         } else if (strcmp(tokens[COMMAND_TOKEN].value, "debugtime") == 0) {
             WANT_TOKENS_MIN(ntokens, 2);
