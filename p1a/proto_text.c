@@ -2061,11 +2061,13 @@ static void process_touch_command(conn *c, token_t *tokens, const size_t ntokens
     }
 }
 
-static void process_arithmetic_command(conn *c, token_t *tokens, const size_t ntokens, const bool incr) {
+static void process_arithmetic_command(conn *c, token_t *tokens, const size_t ntokens, const int operation) {
     char temp[INCR_MAX_STORAGE_LEN];
     uint64_t delta;
     char *key;
     size_t nkey;
+
+    const bool incr = operation == 0 || operation == 2 ? 0 : 1;
 
     assert(c != NULL);
 
@@ -2084,6 +2086,7 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
         return;
     }
 
+    if (operation <= 1) {
     switch(add_delta(c, key, nkey, incr, delta, temp, NULL)) {
     case OK:
         out_string(c, temp);
@@ -2108,6 +2111,33 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
     case DELTA_ITEM_CAS_MISMATCH:
         break; /* Should never get here */
     }
+    } else {
+    switch(mult_delta(c, key, nkey, incr, delta, temp, NULL)) {
+    case OK:
+        out_string(c, temp);
+        break;
+    case NON_NUMERIC:
+        out_string(c, "CLIENT_ERROR cannot increment or decrement non-numeric value");
+        break;
+    case EOM:
+        out_of_memory(c, "SERVER_ERROR out of memory");
+        break;
+    case DELTA_ITEM_NOT_FOUND:
+        pthread_mutex_lock(&c->thread->stats.mutex);
+        // if (incr) {
+        //     c->thread->stats.incr_misses++;
+        // } else {
+        //     c->thread->stats.decr_misses++;
+        // }
+        pthread_mutex_unlock(&c->thread->stats.mutex);
+
+        out_string(c, "NOT_FOUND");
+        break;
+    case DELTA_ITEM_CAS_MISMATCH:
+        break; /* Should never get here */
+    }
+    }
+
 }
 
 
@@ -2837,6 +2867,14 @@ void process_command_ascii(conn *c, char *command) {
         } else {
             out_string(c, "ERROR");
         }
+    } else if (first == 'm') {
+        if (strcmp(tokens[COMMAND_TOKEN].value, "mult") == 0) {
+            
+            WANT_TOKENS_OR(ntokens, 4, 5);
+            process_arithmetic_command(c, tokens, ntokens, 4);
+        } else {
+            out_string(c, "ERROR");
+        }
     } else if (first == 'd') {
         if (strcmp(tokens[COMMAND_TOKEN].value, "delete") == 0) {
 
@@ -2846,6 +2884,10 @@ void process_command_ascii(conn *c, char *command) {
 
             WANT_TOKENS_OR(ntokens, 4, 5);
             process_arithmetic_command(c, tokens, ntokens, 0);
+        } else if (strcmp(tokens[COMMAND_TOKEN].value, "div") == 0) {
+
+            WANT_TOKENS_OR(ntokens, 4, 5);
+            process_arithmetic_command(c, tokens, ntokens, 3);
 #ifdef MEMCACHED_DEBUG
         } else if (strcmp(tokens[COMMAND_TOKEN].value, "debugtime") == 0) {
             WANT_TOKENS_MIN(ntokens, 2);
