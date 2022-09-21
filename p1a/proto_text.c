@@ -2086,6 +2086,11 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
         return;
     }
 
+    if(operation == 2 && delta == 0) {
+        out_string(c, "CLIENT_ERROR cannot divide by 0");
+        return;
+    }
+
     if (operation <= 1) {
     switch(add_delta(c, key, nkey, incr, delta, temp, NULL)) {
     case OK:
@@ -2111,10 +2116,31 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
     case DELTA_ITEM_CAS_MISMATCH:
         break; /* Should never get here */
     }
-    } else if (operation == 2) { // div
-        
-    } else { // mult
+    } else {
+    switch(mult_delta(c, key, nkey, incr, delta, temp, NULL)) {
+    case OK:
+        out_string(c, temp);
+        break;
+    case NON_NUMERIC:
+        out_string(c, "CLIENT_ERROR cannot increment or decrement non-numeric value");
+        break;
+    case EOM:
+        out_of_memory(c, "SERVER_ERROR out of memory");
+        break;
+    case DELTA_ITEM_NOT_FOUND:
+        pthread_mutex_lock(&c->thread->stats.mutex);
+        if (incr) {
+            c->thread->stats.incr_misses++;
+        } else {
+            c->thread->stats.decr_misses++;
+        }
+        pthread_mutex_unlock(&c->thread->stats.mutex);
 
+        out_string(c, "NOT_FOUND");
+        break;
+    case DELTA_ITEM_CAS_MISMATCH:
+        break; /* Should never get here */
+    }
     }
 
 }
