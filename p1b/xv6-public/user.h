@@ -23,6 +23,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int getcount(void);
+int trace(const char *pathname);
 
 // ulib.c
 int stat(const char*, struct stat*);
