@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+
+void execute(char *argv[]);
 
 int main(int argc, char *argv[]) {
     while(1) {
@@ -18,32 +21,37 @@ int main(int argc, char *argv[]) {
 
         if(characters != -1) {
             buffer[characters-1] = '\0';
-            char *tokens[10];
-            tokens[0] = strtok(buffer, " \t\n");
+
+            char *tokens[32];
+            char *token;
+            token = strtok(buffer, " ");
+            for(int i = 0; token != NULL; i++) {
+                tokens[i] = token;
+                token = strtok(NULL, " ");
+            }
+
             execute(tokens);
         }
     }
 }
 
-void execute(char *args[]) {
-    char *path = NULL;
-    path = malloc(6 + strlen(args[0]));
-    strcat(path, "/bin/");
-    strcat(path, args[0]);
+void execute(char *argv[]) {
+    char *tmp = strdup(argv[0]);
+    strcpy(argv[0], "/usr/bin/");
+    strcat(argv[0], tmp);
 
-    char *input[2];
-    input[0] = malloc(512);
-    strcpy(input[0], path);
-    input[1] = NULL;
+    // char *input[2];
+    // input[0] = malloc(512);
+    // strcpy(input[0], path);
+    // input[1] = NULL;
 
-    pid_t pid = fork*();
-    if(pid < 0) {
-        printf("ERROR: fork failed.");
-        exit(0);
-    } else if(pid == 0) {
-        execv(input[0], input);
+    pid_t pid = fork();
+
+    if(pid == 0) {
+        int ret = execv(argv[0], argv);
+        printf("Fails to execute %s\n", argv[0]);
+        exit(1);
     }
 
-    free(path);
-    free(input[0]);
+    free(tmp);
 }
