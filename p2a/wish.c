@@ -4,16 +4,41 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 
-void execute(char *argv[]) {
+void my_exit(char *args[]) {
+    exit(0);
+}
+
+void my_cd(char *args[]) {
+    printf("cd!\n");
+}
+
+void my_path(char *args[]) {
+    printf("path!\n");
+}
+
+void (*builtins[]) (char **) = {
+  &my_exit,
+  &my_cd,
+  &my_path
+};
+
+
+char *const builtins_list[3] = {
+    "exit\n",
+    "cd\n",
+    "path\n"
+};
+
+void execute_program(char *args[]) {
     char *path = malloc(5 + sizeof(char*));
     strcpy(path, "/bin/");
-    strcat(path, argv[0]);
+    strcat(path, args[0]);
 
     pid_t pid = fork();
 
     if(pid == 0) {
-        int ret = execv(path, argv);
-        printf("Fails to execute %s\n", argv[0]);
+        int ret = execv(path, args);
+        printf("Fails to execute %s\n", args[0]);
         exit(1);
     }
 
@@ -21,6 +46,19 @@ void execute(char *argv[]) {
     waitpid(pid, &status, 0);
 
     free(path);
+}
+
+void execute(char *args[]) {
+    int builtin = 0;
+    for(int i = 0; i < 3; i++) {
+        if(strcmp(args[0], builtins_list[i]) == 0) {
+            (*builtins[i])(args);
+            builtin = 1;
+        }
+    }
+    
+    if(!builtin)
+        execute_program(args);
 }
 
 char **parse_input(char *input) {
@@ -44,10 +82,6 @@ char *read_input() {
     size_t characters;
     buffer = (char *)malloc(bufsize * sizeof(char));
     characters = getline(&buffer, &bufsize, stdin);
-
-    if(characters == -1 || strcmp(buffer, "exit\n") == 0) {
-        exit(0);
-    }
 
     return buffer;
 }
