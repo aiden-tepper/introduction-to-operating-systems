@@ -4,16 +4,22 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 
+char **paths;
+
 void my_exit(char *args[]) {
     exit(0);
 }
 
 void my_cd(char *args[]) {
-    printf("cd!\n");
+    chdir(args[1]);
 }
 
 void my_path(char *args[]) {
-    printf("path!\n");
+    free(paths);
+    paths = malloc((sizeof(args)/8 - 1) * sizeof(char*));
+    for(int i = 1; i < sizeof(args)/8; i++) {
+        paths[i-1] = args[i];
+    }
 }
 
 void (*builtins[]) (char **) = {
@@ -22,17 +28,24 @@ void (*builtins[]) (char **) = {
   &my_path
 };
 
-
 char *const builtins_list[3] = {
-    "exit\n",
-    "cd\n",
-    "path\n"
+    "exit",
+    "cd",
+    "path"
 };
 
 void execute_program(char *args[]) {
-    char *path = malloc(5 + sizeof(char*));
-    strcpy(path, "/bin/");
-    strcat(path, args[0]);
+    char *path;
+
+    for(int i = 0; i < sizeof(paths); i++) {
+        path = malloc(sizeof(paths[i]) + sizeof(char*));
+        strcpy(path, paths[i]);
+        strcat(path, "/");
+        strcat(path, args[0]);
+        if(access(path, X_OK) == 0)
+            break;
+        free(path);
+    }
 
     pid_t pid = fork();
 
@@ -50,6 +63,7 @@ void execute_program(char *args[]) {
 
 void execute(char *args[]) {
     int builtin = 0;
+
     for(int i = 0; i < 3; i++) {
         if(strcmp(args[0], builtins_list[i]) == 0) {
             (*builtins[i])(args);
@@ -66,13 +80,13 @@ char **parse_input(char *input) {
     char *token;
     int index = 0;
 
-    token = strtok(input, " ");
+    token = strtok(input, " \n");
     while(token != NULL) {
         tokens[index++] = token;
         token = strtok(NULL, " \n");
     }
 
-    tokens[index] = NULL;
+    tokens[index] = '\0';
     return tokens;
 }
 
@@ -90,6 +104,8 @@ int main(int argc, char *argv[]) {
 
     char *input;
     char **args;
+    paths = malloc(32 * sizeof(char*));
+    paths[0] = "/bin";
 
     while(1) {
         printf("wish> ");
