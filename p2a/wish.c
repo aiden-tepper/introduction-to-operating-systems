@@ -6,7 +6,9 @@
 #include <fcntl.h>
 
 char **paths;
+int cmd_output;
 int execute_program();
+void execute();
 
 void throw_err() {
     char error_message[30] = "An error has occurred\n";
@@ -41,15 +43,51 @@ void my_path(char **args) {
 }
 
 void my_if(char *args[]) {
-    int command = execute_program(args[1], NULL);
-    char* operator = args[2];
-    int constant = atoi(args[3]);
+    char *cmd1[10];
+    int then = 0;
+    int fi = 0;
+    for(int x = 0; args[x] != NULL; x++) {
+        if(strcmp(args[x], "then") == 0)
+            then = 1;
+        if(strcmp(args[x], "fi") == 0)
+            fi = 1;
+    }
+    if(!then || !fi) {
+        throw_err();
+        return;
+    }
+    int i = 1;
+    while(strcmp(args[i], "==") != 0 && strcmp(args[i], "!=") != 0) {
+        cmd1[i-1] = strdup(args[i]);
+        i++;
+        if(args[i+1] == NULL) {
+            throw_err();
+            return;
+        }
+    }
+    cmd1[i-1] = NULL;
+    execute_program(cmd1, NULL);
+    int command = cmd_output;
+    char* operator = args[i++];
+    int constant = atoi(args[i++]);
+    char *cmd2[10];
+    int j = 1;
+    while(strcmp(args[i+j], "fi") != 0) {
+        cmd2[j-1] = strdup(args[i+j]);
+        j++;
+
+    }
+    cmd2[j-1] = NULL;
+    if(args[i+j+1] != NULL) {
+        throw_err();
+        return;
+    }
     if(strcmp(operator, "==") == 0) {
         if(command == constant)
-            printf(args[5]);
+            execute(cmd2);
     } else if(strcmp(operator, "!=") == 0) {
         if(command != constant)
-            printf(args[5]);
+            execute(cmd2);
     }
 }
 
@@ -85,8 +123,10 @@ int execute_program(char *args[], char *redir_file) {
             break;
     }
 
-    pid_t pid = fork();
     int ret;
+    int tmp;
+    int status;
+    pid_t pid = fork();
 
     if(pid == 0) {
         if(redir_file != NULL) {
@@ -96,10 +136,10 @@ int execute_program(char *args[], char *redir_file) {
         }
         ret = execv(path, args);
         throw_err();
+    } else {
+        waitpid(pid, &status, 0);
+        cmd_output = WEXITSTATUS(status);
     }
-
-    int status;
-    waitpid(pid, &status, 0);
 
     free(path);
     return ret;
@@ -127,10 +167,6 @@ void execute(char *args[]) {
     if(args[0] == NULL)
         return;
 
-    char *redir_file = is_redir(args);
-    if(redir_file != NULL && strcmp(redir_file, "abort") == 0)
-        return;
-
     int builtin = 0;
     for(int i = 0; i < 4; i++) {
         if(strcmp(args[0], builtins_list[i]) == 0) {
@@ -138,6 +174,10 @@ void execute(char *args[]) {
             builtin = 1;
         }
     }
+
+    char *redir_file = is_redir(args);
+    if(redir_file != NULL && strcmp(redir_file, "abort") == 0)
+        return;
     
     if(!builtin)
         execute_program(args, redir_file);
@@ -157,7 +197,7 @@ char **parse_input(char *input) {
     char *token;
     int index = 0;
 
-    token = strtok(input, " \t\n");
+    token = strtok(input, " \t\r\n\v");
     while(token != NULL) {
         if(index == 0 && strcmp(token, ">") == 0) {
             tokens[0] = "NULL";
@@ -218,12 +258,12 @@ void batch(char *argv[]) {
         exit(1);
     }
 
-    while((read = getline(&line, &len, fp))) {
+    while(read = getline(&line, &len, fp) > 0) {
         args = parse_input(line);
-        if(args[0] == NULL)
-            break;
         execute(args);
         free(args);
+        free(line);
+        line = NULL;
     }
 
     fclose(fp);
