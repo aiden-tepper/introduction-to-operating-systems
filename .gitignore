@@ -14,4 +14,7 @@ kernel
 kernelmemfs
 mkfs
 .gdbinit
+<<<<<<< HEAD
 tester/
+=======
+>>>>>>> ee71177957546823b2392b1ce7dca2ec71b3f7f8
