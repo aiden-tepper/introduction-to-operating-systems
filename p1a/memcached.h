@@ -919,6 +919,11 @@ enum delta_result_type do_add_delta(conn *c, const char *key,
                                     const int64_t delta, char *buf,
                                     uint64_t *cas, const uint32_t hv,
                                     item **it_ret);
+                                    enum delta_result_type do_mult_delta(conn *c, const char *key,
+                                    const size_t nkey, const bool incr,
+                                    const int64_t delta, char *buf,
+                                    uint64_t *cas, const uint32_t hv,
+                                    item **it_ret);
 enum store_item_type do_store_item(item *item, int comm, conn* c, const uint32_t hv);
 void thread_io_queue_add(LIBEVENT_THREAD *t, int type, void *ctx, io_queue_stack_cb cb, io_queue_stack_cb com_cb, io_queue_cb ret_cb, io_queue_cb fin_cb);
 void conn_io_queue_setup(conn *c);
@@ -962,6 +967,10 @@ void sidethread_conn_close(conn *c);
 
 /* Lock wrappers for cache functions that are called from main loop. */
 enum delta_result_type add_delta(conn *c, const char *key,
+                                 const size_t nkey, bool incr,
+                                 const int64_t delta, char *buf,
+                                 uint64_t *cas);
+enum delta_result_type mult_delta(conn *c, const char *key,
                                  const size_t nkey, bool incr,
                                  const int64_t delta, char *buf,
                                  uint64_t *cas);
