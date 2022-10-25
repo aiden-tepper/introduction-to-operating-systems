@@ -330,10 +330,31 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
+    int high_priority = 0;
+
+    // look for high priority process
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE || p->ticket_value != 1)
+        continue;
+      
+      high_priority = 1;
+
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
+
+      swtch(&(c->scheduler), p->context);
+      switchkvm();
+
+      c->proc = 0;
+    }
+    release(&ptable.lock);
+
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
+      if(p->state != RUNNABLE || p->ticket_value != 0 || high_priority != 0)
         continue;
 
       // Switch to chosen process.  It is the process's job
