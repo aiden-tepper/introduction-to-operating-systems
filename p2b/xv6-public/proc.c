@@ -88,6 +88,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->ticket_value = 1;
 
   release(&ptable.lock);
 
@@ -351,10 +352,13 @@ scheduler(void)
     }
     release(&ptable.lock);
 
+    if(high_priority == 1)
+      continue;
+
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE || p->ticket_value != 0 || high_priority != 0)
+      if(p->state != RUNNABLE || p->ticket_value != 0)
         continue;
 
       // Switch to chosen process.  It is the process's job

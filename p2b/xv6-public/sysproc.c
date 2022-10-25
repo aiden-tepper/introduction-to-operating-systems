@@ -102,7 +102,10 @@ sys_settickets(void)
   if(numtickets < 1)
     return -1;
   
-  //set number of tickets of calling proc
+  struct proc *p;
+  acquire(&ptable.lock);
+  p = ptable.proc;
+  p->ticket_value = numtickets;
   return 0;
 }
 
