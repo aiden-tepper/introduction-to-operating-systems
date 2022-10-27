@@ -90,6 +90,7 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->tickets = 1;
+  p->ticks = 0;
 
   release(&ptable.lock);
 
@@ -151,6 +152,8 @@ userinit(void)
   acquire(&ptable.lock);
 
   p->state = RUNNABLE;
+  p->ticks = 0;
+  p->tickets = 1;
 
   release(&ptable.lock);
 }
@@ -200,6 +203,8 @@ fork(void)
   }
   np->sz = curproc->sz;
   np->parent = curproc;
+  np->tickets = curproc->tickets;
+  np->ticks = 0;
   *np->tf = *curproc->tf;
 
   // Clear %eax so that fork returns 0 in the child.
@@ -298,6 +303,8 @@ wait(void)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+        p->tickets = 0;
+        p->ticks = 0;
         release(&ptable.lock);
         return pid;
       }
@@ -342,13 +349,24 @@ scheduler(void)
         continue;
 
       high_priority = 1;
+      acquire(&tickslock);
+      int initial = p->ticks;
+      release(&tickslock);
 
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      p->inuse = 1;
 
       swtch(&(c->scheduler), p->context);
+      p->inuse = 0;
       switchkvm();
+
+      acquire(&tickslock);
+      int final = p->ticks;
+      release(&tickslock);
+
+      p->ticks += final-initial;
 
       c->proc = 0;
     }
@@ -369,8 +387,12 @@ scheduler(void)
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      p->inuse = 1;
+      int temp = ticks;
 
       swtch(&(c->scheduler), p->context);
+      p->ticks += ticks - temp;
+      p->inuse = 0;
       switchkvm();
 
       // Process is done running for now.
@@ -578,15 +600,16 @@ getpinfo(struct pstat* pstat)
     return -1;
 
   struct proc *p;
-  int i = 0;
 
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    pstat->inuse[i] = p->state == UNUSED ? 1 : 0;
-    pstat->tickets[i] = p->tickets;
-    pstat->pid[i] = p->pid;
-    pstat->ticks[i] = p->ticks;
-    i++;
+    int i = p - ptable.proc;
+    if(p-> state == UNUSED) {
+      pstat->inuse[i] = p->state;
+      pstat->tickets[i] = p->tickets;
+      pstat->pid[i] = p->pid;
+      pstat->ticks[i] = p->ticks;
+    }
   }
   release(&ptable.lock);
 
