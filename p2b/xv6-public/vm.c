@@ -322,7 +322,7 @@ copyuvm(pde_t *pgdir, uint sz)
 
   if((d = setupkvm()) == 0)
     return 0;
-  for(i = 0; i < sz; i += PGSIZE){
+  for(i = PGSIZE; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("copyuvm: pte should exist");
     if(!(*pte & PTE_P))
@@ -385,10 +385,62 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
-//PAGEBREAK!
-// Blank page.
-//PAGEBREAK!
-// Blank page.
-//PAGEBREAK!
-// Blank page.
+int
+mprotect(void *addr, int len)
+{
+  struct proc* currproc = myproc();
+  int addrspace = (int)addr + (len) *PGSIZE;
 
+  if((int)(((int)addr) % PGSIZE) != 0)
+    return -1;
+  if(len <= 0 || addrspace > currproc->sz)
+    return -1;
+
+  pte_t *pte;
+  pte = walkpgdir(currproc->pgdir, addr, 0);
+  
+  if(*pte) {
+    for(int i = (int)addr; i < addrspace; i += PGSIZE) {
+      pte = walkpgdir(currproc->pgdir, (void*)i, 0);
+      int addr_exists = ((*pte & PTE_U) != 0) && ((*pte & PTE_P) != 0);
+      if(addr_exists)
+        *pte = (*pte) & (~PTE_W);
+      else
+        return -1;
+    }
+  }
+
+  lcr3(V2P(currproc->pgdir));
+
+  return 0;
+}
+
+int
+munprotect(void *addr, int len)
+{
+  struct proc* currproc = myproc();
+  int addrspace = (int)addr + (len) *PGSIZE;
+
+  if((int)(((int)addr) % PGSIZE) != 0)
+    return -1;
+  if(len <= 0 || addrspace > currproc->sz)
+    return -1;
+
+  pte_t *pte;
+  pte = walkpgdir(currproc->pgdir, addr, 0);
+
+  if(*pte) {
+    for(int i = (int)addr; i < addrspace; i += PGSIZE) {
+      pte = walkpgdir(currproc->pgdir, (void*)i, 0);
+      int addr_exists = ((*pte & PTE_U) != 0) && ((*pte & PTE_P) != 0);
+      if(addr_exists)
+        *pte = (*pte) | (PTE_W);
+      else
+        return -1;
+    }
+  }
+
+  lcr3(V2P(currproc->pgdir));
+
+  return 0;
+}

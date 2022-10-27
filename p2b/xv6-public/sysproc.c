@@ -117,10 +117,20 @@ sys_getpinfo(void)
 
 int
 sys_mprotect(void) {
-  return 0;
+  int addr;
+  int len = 0;
+  if(argint(0, &addr)<0 || argint(1, &len)<0)
+    return -1;
+
+  return mprotect((void *)addr, len);
 }
 
 int
 sys_munprotect(void) {
-  return 0;
+  int addr;
+  int len = 0;
+  if(argint(0, &addr)<0 || argint(1, &len)<0)
+    return -1;
+
+  return munprotect((void *)addr, len);
 }

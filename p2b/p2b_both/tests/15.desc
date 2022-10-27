@@ -1,1 +1,0 @@
-mprotect should work and cause seg fault on illegal access.

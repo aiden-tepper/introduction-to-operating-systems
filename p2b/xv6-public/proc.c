@@ -359,8 +359,8 @@ scheduler(void)
       p->inuse = 1;
 
       swtch(&(c->scheduler), p->context);
-      p->inuse = 0;
       switchkvm();
+      p->ticks += 1;
 
       acquire(&tickslock);
       int final = p->ticks;
@@ -381,6 +381,10 @@ scheduler(void)
       if(p->state != RUNNABLE || p->tickets != 0)
         continue;
 
+      acquire(&tickslock);
+      int initial = p->ticks;
+      release(&tickslock);
+
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -388,12 +392,16 @@ scheduler(void)
       switchuvm(p);
       p->state = RUNNING;
       p->inuse = 1;
-      int temp = ticks;
 
       swtch(&(c->scheduler), p->context);
-      p->ticks += ticks - temp;
-      p->inuse = 0;
       switchkvm();
+      p->ticks += 1;
+
+      acquire(&tickslock);
+      int final = p->ticks;
+      release(&tickslock);
+
+      p->ticks += final-initial;
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
@@ -604,8 +612,8 @@ getpinfo(struct pstat* pstat)
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     int i = p - ptable.proc;
-    if(p-> state == UNUSED) {
-      pstat->inuse[i] = p->state;
+    if(p->state != UNUSED) {
+      pstat->inuse[i] = p->inuse;
       pstat->tickets[i] = p->tickets;
       pstat->pid[i] = p->pid;
       pstat->ticks[i] = p->ticks;
