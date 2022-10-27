@@ -29,6 +29,7 @@
     "**/.vscode/**"
   ],
   "files.associations": {
-    "pstat.h": "c"
+    "pstat.h": "c",
+    "mutex": "c"
   }
 }

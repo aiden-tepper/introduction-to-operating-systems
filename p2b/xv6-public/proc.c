@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "pstat.h"
 
 struct {
   struct spinlock lock;
@@ -88,7 +89,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->ticket_value = 1;
+  p->tickets = 1;
 
   release(&ptable.lock);
 
@@ -216,6 +217,7 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
+  np->tickets = curproc->tickets;
 
   release(&ptable.lock);
 
@@ -336,7 +338,7 @@ scheduler(void)
     // look for high priority processes
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE || p->ticket_value != 1)
+      if(p->state != RUNNABLE || p->tickets != 1)
         continue;
 
       high_priority = 1;
@@ -358,7 +360,7 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE || p->ticket_value != 0)
+      if(p->state != RUNNABLE || p->tickets != 0)
         continue;
 
       // Switch to chosen process.  It is the process's job
@@ -529,7 +531,7 @@ void
 procdump(void)
 {
   static char *states[] = {
-  [UNUSED]    "unused",
+  [UNUSED]    "un21used",
   [EMBRYO]    "embryo",
   [SLEEPING]  "sleep ",
   [RUNNABLE]  "runble",
@@ -556,4 +558,37 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+int
+settickets(int number)
+{
+  if(number > 1 || number < 0)
+    return -1;
+
+  myproc()->tickets = number;
+
+  return 0;
+}
+
+int
+getpinfo(struct pstat* pstat)
+{
+  if(!pstat)
+    return -1;
+
+  struct proc *p;
+  int i = 0;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    pstat->inuse[i] = p->state == UNUSED ? 1 : 0;
+    pstat->tickets[i] = p->tickets;
+    pstat->pid[i] = p->pid;
+    pstat->ticks[i] = p->ticks;
+    i++;
+  }
+  release(&ptable.lock);
+
+  return 0;
 }

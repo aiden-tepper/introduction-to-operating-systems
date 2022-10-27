@@ -99,36 +99,28 @@ sys_settickets(void)
 
   if(argint(0, &numtickets) < 0)
     return -1;
-  if(numtickets < 1)
-    return -1;
   
-  struct proc *p;
-  acquire(&ptable.lock);
-  p = ptable.proc;
-  p->ticket_value = numtickets;
-  return 0;
+  return settickets(numtickets);
 }
 
 // return information about all running processes
 int
 sys_getpinfo(void)
 {
-  struct pstat *p;
+  struct pstat *pstat;
 
-  if(argptr(0, (void*)&p, sizeof(*p)) < 0)
+  if(argptr(0, (void*)&pstat, sizeof(*pstat)) < 0)
     return -1;
     
-  // return how many times each running process has been chosen to run
-  // also return process ID of each
+  return getpinfo(pstat);
+}
+
+int
+sys_mprotect(void) {
   return 0;
 }
 
 int
-mprotect(void) {
-  return 0;
-}
-
-int
-munprotect(void) {
+sys_munprotect(void) {
   return 0;
 }
